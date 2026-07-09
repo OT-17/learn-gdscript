@@ -306,12 +306,22 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v3";
+    badge.textContent = "mobile v4";
     document.body.appendChild(badge);
 
     // Read by autoload/MobileDisplay.gd inside the app: how much to enlarge
     // the UI on touch devices. Tune here, no re-export needed.
     window.MOBILE_UI_SCALE = 1.75;
+
+    // Testing backdoor: ?uiscale=1.75 forces the mobile scale on any device,
+    // so the phone layout can be previewed in a desktop browser.
+    const uiscaleParam = new URLSearchParams(window.location.search).get(
+      "uiscale"
+    );
+    if (uiscaleParam && Number(uiscaleParam) > 0.5) {
+      window.MOBILE_UI_SCALE = Number(uiscaleParam);
+      window.FORCE_UI_SCALE = true;
+    }
 
     // Godot's virtual keyboard creates a hidden <input>/<textarea> next to the
     // canvas and calls .focus() on tap. Safari scrolls the focused element
@@ -545,9 +555,13 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     });
 
     /**
-     * Only add the button if Godot has loaded
+     * Only add the button if Godot has loaded, and only on platforms that
+     * support the Fullscreen API at all (iPhone Safari does not).
      */
     GDQUEST.events.onGodotLoaded.once(() => {
+      if (!document.documentElement.requestFullscreen) {
+        return;
+      }
       canvasContainer.appendChild(fullscreenOnButton);
       canvasContainer.appendChild(fullscreenOffButton);
     });

@@ -9,7 +9,11 @@ extends Node
 const DEFAULT_MOBILE_SCALE := 1.75
 
 func _ready() -> void:
-	if not DisplayServer.is_touchscreen_available():
+	var forced := false
+	if OS.has_feature("web"):
+		var force_flag: Variant = JavaScriptBridge.eval("window.FORCE_UI_SCALE ? 1 : 0")
+		forced = force_flag is float and force_flag > 0.0
+	if not DisplayServer.is_touchscreen_available() and not forced:
 		return
 	var ui_scale := DEFAULT_MOBILE_SCALE
 	if OS.has_feature("web"):
