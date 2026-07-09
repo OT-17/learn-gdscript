@@ -23,6 +23,7 @@ ThemeManager="*res://autoload/ThemeManager.gd"
 Events="*res://autoload/Events.gd"
 NavigationManager="*res://autoload/NavigationManager.gd"
 TextUtils="*res://autoload/TextUtils.gd"
+MobileDisplay="*res://autoload/MobileDisplay.gd"
 
 [debug]
 

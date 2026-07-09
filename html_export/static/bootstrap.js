@@ -306,8 +306,12 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v2";
+    badge.textContent = "mobile v3";
     document.body.appendChild(badge);
+
+    // Read by autoload/MobileDisplay.gd inside the app: how much to enlarge
+    // the UI on touch devices. Tune here, no re-export needed.
+    window.MOBILE_UI_SCALE = 1.75;
 
     // Godot's virtual keyboard creates a hidden <input>/<textarea> next to the
     // canvas and calls .focus() on tap. Safari scrolls the focused element
