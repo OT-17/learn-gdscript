@@ -302,6 +302,37 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     GDQUEST.displayFailureNotice = displayFailureNotice;
   }
 
+  virtualKeyboardHardening: {
+    // Visible build tag so remote testers can confirm which version they run.
+    const badge = document.createElement("div");
+    badge.id = "version";
+    badge.textContent = "mobile v2";
+    document.body.appendChild(badge);
+
+    // Godot's virtual keyboard creates a hidden <input>/<textarea> next to the
+    // canvas and calls .focus() on tap. Safari scrolls the focused element
+    // into view, yanking the app around. Wrap focus with preventScroll and
+    // clamp any scroll that slips through.
+    const patchFocus = (el) => {
+      if (!el.matches || !el.matches("input, textarea")) {
+        return;
+      }
+      const nativeFocus = el.focus.bind(el);
+      el.focus = () => nativeFocus({ preventScroll: true });
+    };
+    new MutationObserver((mutations) =>
+      mutations.forEach((m) => m.addedNodes.forEach(patchFocus))
+    ).observe(canvasContainer, { childList: true });
+
+    document.addEventListener("focusin", () =>
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      })
+    );
+  }
+
   mobileHandling: {
     const KEY = "force-mobile";
 
