@@ -128,14 +128,35 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
   };
 
   resize: {
+    // Size against the visual viewport when available: on mobile it shrinks
+    // when the on-screen keyboard opens, so the whole app rescales into the
+    // visible strip above the keyboard and you can see what you type.
     const onResize = () => {
-      const { width, height, ratio } = aspectRatioCanvas();
+      const vv = window.visualViewport;
+      const currentWidth = vv ? vv.width : window.innerWidth;
+      const currentHeight = vv ? vv.height : window.innerHeight;
+      const { width, height, ratio } = aspectRatioCanvas(
+        currentWidth,
+        currentHeight
+      );
       canvasContainer.style.setProperty(`width`, `${width}px`);
       canvasContainer.style.setProperty(`height`, `${height}px`);
       document.documentElement.style.setProperty("--scale", `${ratio}`);
+      const keyboardOpen = vv && window.innerHeight - vv.height > 80;
+      document.body.classList.toggle("vk-open", !!keyboardOpen);
     };
     const aspectRatioCanvas = aspectRatio(1920, 1080);
     window.addEventListener("resize", throttle(GDQUEST.events.onResize.emit));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener(
+        "resize",
+        throttle(GDQUEST.events.onResize.emit)
+      );
+      // If Safari still nudges the page toward the hidden input, snap back.
+      window.visualViewport.addEventListener("scroll", () =>
+        window.scrollTo(0, 0)
+      );
+    }
     GDQUEST.events.onResize.connect(onResize);
     onResize();
   }
