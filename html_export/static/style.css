@@ -101,6 +101,13 @@ body.vk-open #canvas-container {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Keep the app clear of the iPhone notch and home indicator when running
+     full-screen from the home screen (viewport-fit=cover). */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  box-sizing: border-box;
   /**transform: scale(var(--scale));
   transform-origin: center center;*/
 }

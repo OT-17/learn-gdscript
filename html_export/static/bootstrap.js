@@ -131,21 +131,23 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Size against the visual viewport when available: on mobile it shrinks
     // when the on-screen keyboard opens, so the whole app rescales into the
     // visible strip above the keyboard and you can see what you type.
+    // The canvas fills the viewport with NO forced 16:9 letterbox: on a
+    // portrait phone the old widescreen band wasted most of the screen. The
+    // app itself (stretch: canvas_items + MobileDisplay.gd) adapts to any
+    // aspect ratio.
     const onResize = () => {
       const vv = window.visualViewport;
-      const currentWidth = vv ? vv.width : window.innerWidth;
-      const currentHeight = vv ? vv.height : window.innerHeight;
-      const { width, height, ratio } = aspectRatioCanvas(
-        currentWidth,
-        currentHeight
-      );
+      const width = vv ? vv.width : window.innerWidth;
+      const height = vv ? vv.height : window.innerHeight;
       canvasContainer.style.setProperty(`width`, `${width}px`);
       canvasContainer.style.setProperty(`height`, `${height}px`);
-      document.documentElement.style.setProperty("--scale", `${ratio}`);
+      document.documentElement.style.setProperty(
+        "--scale",
+        `${Math.min(width / 1920, height / 1080)}`
+      );
       const keyboardOpen = vv && window.innerHeight - vv.height > 80;
       document.body.classList.toggle("vk-open", !!keyboardOpen);
     };
-    const aspectRatioCanvas = aspectRatio(1920, 1080);
     window.addEventListener("resize", throttle(GDQUEST.events.onResize.emit));
     if (window.visualViewport) {
       window.visualViewport.addEventListener(
@@ -306,21 +308,20 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v4";
+    badge.textContent = "mobile v5";
     document.body.appendChild(badge);
 
-    // Read by autoload/MobileDisplay.gd inside the app: how much to enlarge
-    // the UI on touch devices. Tune here, no re-export needed.
-    window.MOBILE_UI_SCALE = 1.75;
-
-    // Testing backdoor: ?uiscale=1.75 forces the mobile scale on any device,
-    // so the phone layout can be previewed in a desktop browser.
+    // Testing backdoor: ?uiscale=1 activates the app's mobile layout on any
+    // device (auto-computed scale); ?uiscale=1.6 forces that exact scale.
+    // Read by autoload/MobileDisplay.gd.
     const uiscaleParam = new URLSearchParams(window.location.search).get(
       "uiscale"
     );
-    if (uiscaleParam && Number(uiscaleParam) > 0.5) {
-      window.MOBILE_UI_SCALE = Number(uiscaleParam);
+    if (uiscaleParam && Number(uiscaleParam) > 0) {
       window.FORCE_UI_SCALE = true;
+      if (Number(uiscaleParam) > 0.5 && Number(uiscaleParam) !== 1) {
+        window.MOBILE_UI_SCALE_OVERRIDE = Number(uiscaleParam);
+      }
     }
 
     // Godot's virtual keyboard creates a hidden <input>/<textarea> next to the

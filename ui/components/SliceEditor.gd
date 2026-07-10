@@ -51,6 +51,12 @@ var _last_selection_end := Vector2i.ZERO
 func _ready() -> void:
 	CodeEditorEnhancer.enhance(self)
 
+	# On touch devices the on-screen keyboard's hidden HTML input steals DOM
+	# focus, which makes the engine hide the caret. Force-draw it so mobile
+	# users can see where they are typing.
+	if DisplayServer.is_touchscreen_available():
+		caret_force_displayed = true
+
 	var scroll_offsets := Vector2.ZERO
 	var found = 0
 	for child in get_children():
