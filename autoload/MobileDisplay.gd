@@ -8,6 +8,7 @@ extends Node
 
 const PORTRAIT_TARGET_WIDTH := 420.0
 const LANDSCAPE_TARGET_WIDTH := 950.0
+const DESIGN_WIDTH := 1920.0
 const DESIGN_HEIGHT := 1080.0
 
 var _active := false
@@ -20,6 +21,10 @@ func _ready() -> void:
 	if not DisplayServer.is_touchscreen_available() and not forced:
 		return
 	_active = true
+	# The project ships with aspect "keep_height", which letterboxes (black
+	# bars) when the window is taller than 16:9, i.e. on every portrait phone.
+	# "expand" fills the whole window at the same scale instead.
+	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	get_window().size_changed.connect(_update_scale)
 	_update_scale()
 
@@ -33,13 +38,14 @@ func _update_scale() -> void:
 		PORTRAIT_TARGET_WIDTH if window_size.x < window_size.y
 		else LANDSCAPE_TARGET_WIDTH
 	)
-	# With stretch mode canvas_items + keep_height, the effective scale is
-	# (window_height / DESIGN_HEIGHT) * content_scale_factor, and the virtual
+	# With stretch canvas_items + aspect expand, the base scale is
+	# min(window/design) per axis, times content_scale_factor; the virtual
 	# width is window_width / effective scale. Solve for the factor that makes
 	# the virtual width equal target_width. Screen density cancels out.
-	var ui_scale := DESIGN_HEIGHT * window_size.x / (target_width * window_size.y)
+	var min_ratio := minf(window_size.x / DESIGN_WIDTH, window_size.y / DESIGN_HEIGHT)
+	var ui_scale := window_size.x / (target_width * min_ratio)
 	if OS.has_feature("web"):
 		var override: Variant = JavaScriptBridge.eval("window.MOBILE_UI_SCALE_OVERRIDE || 0")
 		if override is float and override > 0.5:
 			ui_scale = override
-	get_window().content_scale_factor = clampf(ui_scale, 0.75, 3.0)
+	get_window().content_scale_factor = clampf(ui_scale, 0.75, 6.0)

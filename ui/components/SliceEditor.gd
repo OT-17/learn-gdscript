@@ -52,10 +52,13 @@ func _ready() -> void:
 	CodeEditorEnhancer.enhance(self)
 
 	# On touch devices the on-screen keyboard's hidden HTML input steals DOM
-	# focus, which makes the engine hide the caret. Force-draw it so mobile
-	# users can see where they are typing.
+	# focus, which makes the engine hide the caret. Force-draw it, keep it
+	# solid (no blink), and thicken it so mobile users can see where they are
+	# typing.
 	if DisplayServer.is_touchscreen_available():
 		caret_force_displayed = true
+		caret_blink = false
+		add_theme_constant_override("caret_width", 3)
 
 	var scroll_offsets := Vector2.ZERO
 	var found = 0
