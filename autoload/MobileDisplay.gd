@@ -6,7 +6,7 @@ extends Node
 # landscape. The web shell can force an exact value via ?uiscale=N (stored in
 # window.MOBILE_UI_SCALE_OVERRIDE by bootstrap.js) for desktop testing/tuning.
 
-const PORTRAIT_TARGET_WIDTH := 420.0
+const PORTRAIT_TARGET_WIDTH := 800.0
 const LANDSCAPE_TARGET_WIDTH := 950.0
 const DESIGN_WIDTH := 1920.0
 const DESIGN_HEIGHT := 1080.0
@@ -26,7 +26,18 @@ func _ready() -> void:
 	# "expand" fills the whole window at the same scale instead.
 	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	get_window().size_changed.connect(_update_scale)
+	# The on-screen keyboard's hidden HTML input steals browser focus, which
+	# makes the engine hide text carets. Force every text editor in the app to
+	# keep a solid, thick caret so users can see where they are typing.
+	get_tree().node_added.connect(_on_node_added)
 	_update_scale()
+
+func _on_node_added(node: Node) -> void:
+	if node is TextEdit:
+		var editor := node as TextEdit
+		editor.caret_force_displayed = true
+		editor.caret_blink = false
+		editor.add_theme_constant_override("caret_width", 3)
 
 func _update_scale() -> void:
 	if not _active:
@@ -34,8 +45,14 @@ func _update_scale() -> void:
 	var window_size := Vector2(get_window().size)
 	if window_size.x <= 0.0 or window_size.y <= 0.0:
 		return
+	# Judge orientation by the physical screen, not the window: with the
+	# on-screen keyboard open the window is wider than tall even though the
+	# phone is still held in portrait.
+	var screen_size := Vector2(DisplayServer.screen_get_size())
+	if screen_size.x <= 0.0 or screen_size.y <= 0.0:
+		screen_size = window_size
 	var target_width := (
-		PORTRAIT_TARGET_WIDTH if window_size.x < window_size.y
+		PORTRAIT_TARGET_WIDTH if screen_size.x < screen_size.y
 		else LANDSCAPE_TARGET_WIDTH
 	)
 	# With stretch canvas_items + aspect expand, the base scale is
