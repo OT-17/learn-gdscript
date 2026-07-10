@@ -62,6 +62,7 @@ var _run_autotimer: Timer
 
 var _is_info_panel_open := true
 var _is_solution_panel_open := false
+var _is_mobile_layout := false
 
 var _current_scene: Node
 # Used to automate resetting transform and visibility to default in case the
@@ -108,6 +109,9 @@ func _ready() -> void:
 	_practice_leave_unfinished_popup.denied.connect(_deny_unload)
 
 	Events.practice_run_completed.connect(_test_student_code)
+
+	if MobileDisplay.is_active():
+		_setup_mobile_layout()
 
 	_update_slidable_panels()
 	_layout_container.resized.connect(_update_slidable_panels)
@@ -518,6 +522,36 @@ func _update_slidable_panels() -> void:
 		_solution_panel.offset_left = _output_anchors.size.x
 
 
+# On phones the three desktop columns (instructions | code editor | game+output)
+# collapse into unusable slivers. Restack them vertically instead: instructions
+# on top, code editor in the middle, game view and console at the bottom. Each
+# section gets a minimum height and the stack lives in a ScrollContainer, so
+# when the screen is short (landscape, keyboard open) the page scrolls instead
+# of overlapping. The distraction-free-mode button becomes an "expand the
+# editor / hide the instructions" toggle.
+func _setup_mobile_layout() -> void:
+	_is_mobile_layout = true
+	(_layout_container as BoxContainer).vertical = true
+	_info_panel_anchors.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_info_panel_anchors.custom_minimum_size = Vector2(0, 260)
+	_code_editor.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_code_editor.custom_minimum_size = Vector2(0, 400)
+	_output_anchors.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_output_anchors.custom_minimum_size = Vector2(0, 420)
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "MobileScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var margin := _layout_container.get_parent()
+	margin.remove_child(_layout_container)
+	margin.add_child(scroll)
+	scroll.add_child(_layout_container)
+	_layout_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_layout_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+
 func _toggle_distraction_free_mode() -> void:
 	if _is_info_panel_open:
 		_enable_distraction_free_mode()
@@ -527,6 +561,8 @@ func _toggle_distraction_free_mode() -> void:
 
 func _disable_distraction_free_mode() -> void:
 	_is_info_panel_open = true
+	if _is_mobile_layout:
+		_info_panel_anchors.visible = true
 	if _scene_tween:
 		_scene_tween.kill()
 
@@ -542,6 +578,10 @@ func _enable_distraction_free_mode() -> void:
 	_update_slidable_panels()
 
 	_is_info_panel_open = false
+	if _is_mobile_layout:
+		# A collapsed section still occupies its minimum height in the mobile
+		# stack, so hide the instructions outright to free the space.
+		_info_panel_anchors.visible = false
 	if _scene_tween:
 		_scene_tween.kill()
 	_scene_tween = create_tween().set_parallel()

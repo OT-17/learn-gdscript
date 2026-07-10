@@ -48,7 +48,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="Layout" type="HBoxContainer" parent="Margin" unique_id=196783783]
+[node name="Layout" type="BoxContainer" parent="Margin" unique_id=196783783]
 layout_mode = 2
 theme_override_constants/separation = 12
 

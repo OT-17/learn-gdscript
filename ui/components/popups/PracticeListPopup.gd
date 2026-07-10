@@ -9,6 +9,17 @@ const PracticeButtonScene := preload("res://ui/screens/lesson/UIPracticeButton.t
 func _ready() -> void:
 	set_as_top_level(true)
 
+	# On phones the fixed 860x620 desktop panel overflows the screen and puts
+	# the Close button out of reach; fit the panel to the visible area instead.
+	if MobileDisplay.is_active():
+		var panel := $PanelContainer as Control
+		panel.custom_minimum_size = Vector2.ZERO
+		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.offset_left = 16.0
+		panel.offset_top = 16.0
+		panel.offset_right = -16.0
+		panel.offset_bottom = -16.0
+
 	Events.practice_requested.connect(_on_practice_requested)
 	_cancel_button.pressed.connect(hide)
 	visibility_changed.connect(_on_visibility_changed)

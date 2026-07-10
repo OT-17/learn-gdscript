@@ -89,7 +89,26 @@ func load_immediately(target: Control) -> void:
 	_loading_screen.progress_value = 1.0
 
 
+# The Pages node is a fixed 1920x1080 box centered on screen, which gets
+# cropped on phones (the app canvas is ~800 virtual px wide in portrait). On
+# touch devices, stretch it to the real canvas while in the course so lessons
+# and practices lay out for the actual visible area. The welcome screen keeps
+# the fixed box: its decorative art is hand-placed for the desktop rectangle.
+func _fit_pages_to_screen_on_mobile() -> void:
+	if MobileDisplay.is_active():
+		_pages.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+func _restore_pages_fixed_box() -> void:
+	_pages.set_anchors_preset(Control.PRESET_CENTER)
+	_pages.offset_left = -960.0
+	_pages.offset_top = -540.0
+	_pages.offset_right = 960.0
+	_pages.offset_bottom = 540.0
+
+
 func _on_course_requested(force_outliner: bool = false) -> void:
+	_fit_pages_to_screen_on_mobile()
 	_unloading_target = _welcome_screen
 	start_loading(_course_screen)
 
@@ -143,6 +162,7 @@ func _show_end_screen(_course_index: CourseIndex) -> void:
 
 
 func _go_to_welcome_screen() -> void:
+	_restore_pages_fixed_box()
 	_course_screen.hide()
 	_course_navigator.queue_free()
 

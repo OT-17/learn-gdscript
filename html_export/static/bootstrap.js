@@ -353,7 +353,7 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v11";
+    badge.textContent = "mobile v12";
     document.body.appendChild(badge);
 
     // Live diagnostic readout, enabled with ?diag in the URL: shows what the

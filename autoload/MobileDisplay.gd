@@ -13,6 +13,10 @@ const DESIGN_HEIGHT := 1080.0
 
 var _active := false
 
+# Other scripts (e.g. UIPractice) check this to switch to phone-friendly layouts.
+func is_active() -> bool:
+	return _active
+
 func _ready() -> void:
 	var forced := false
 	if OS.has_feature("web"):
@@ -34,8 +38,9 @@ func _ready() -> void:
 
 func _on_node_added(node: Node) -> void:
 	if node is TextEdit:
+		# NOTE: this engine build has no TextEdit.caret_force_displayed
+		# property — assigning it here silently killed the rest of this branch.
 		var editor := node as TextEdit
-		editor.caret_force_displayed = true
 		editor.caret_blink = false
 		editor.add_theme_constant_override("caret_width", 3)
 	elif node is RichTextLabel:
