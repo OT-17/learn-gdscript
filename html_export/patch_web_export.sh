@@ -15,4 +15,10 @@ sed -i '' \
   -e 's/window\.innerHeight/((window.visualViewport?window.visualViewport.height:window.innerHeight)-(window.GDQ_SAFE_BOTTOM||0))/g' \
   index.js
 
-echo "Patched index.js: $(grep -c 'visualViewport?window.visualViewport.width' index.js) width site(s), $(grep -c 'visualViewport?window.visualViewport.height' index.js) height site(s)"
+# When the virtual keyboard's hidden <input>/<textarea> (siblings of the
+# canvas) grab browser focus, the canvas fires 'blur' and the engine treats it
+# as the window losing focus, hiding text carets. Suppress that one case;
+# genuine focus losses still pass through.
+perl -0pi -e 's/\QGodotEventListeners.add(canvas,evt_name,function(){func(notif[idx])},true)\E/GodotEventListeners.add(canvas,evt_name,function(ev){if(evt_name==="blur"&&ev&&ev.relatedTarget&&ev.relatedTarget.parentElement===canvas.parentElement&&(ev.relatedTarget.tagName==="INPUT"||ev.relatedTarget.tagName==="TEXTAREA"))return;func(notif[idx])},true)/' index.js
+
+echo "Patched index.js: $(grep -c 'visualViewport?window.visualViewport.width' index.js) width site(s), $(grep -c 'visualViewport?window.visualViewport.height' index.js) height site(s), $(grep -c 'ev.relatedTarget.parentElement===canvas.parentElement' index.js) focus-guard site(s)"

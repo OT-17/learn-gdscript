@@ -38,6 +38,10 @@ func _on_node_added(node: Node) -> void:
 		editor.caret_force_displayed = true
 		editor.caret_blink = false
 		editor.add_theme_constant_override("caret_width", 3)
+	elif node is RichTextLabel:
+		# Selectable text swallows touch drags (starts selecting instead of
+		# letting the ScrollContainer pan). On touch devices, scrolling wins.
+		(node as RichTextLabel).selection_enabled = false
 
 func _update_scale() -> void:
 	if not _active:
