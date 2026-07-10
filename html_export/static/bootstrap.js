@@ -13,11 +13,43 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
   // The engine (canvasResizePolicy 2) is patched at build time to measure the
   // visualViewport (see html_export/patch_web_export.sh), so it tracks the
   // area the on-screen keyboard and browser bars leave visible. Forward
-  // visualViewport resizes as window resize events for immediate reaction.
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", () =>
-      window.dispatchEvent(new Event("resize"))
-    );
+  // visualViewport resizes as window resize events for immediate reaction,
+  // and run a watchdog: if the canvas drifts from the visible size (iOS
+  // sometimes reports sizes late), nudge the engine with a resize event.
+  // Also measure the bottom safe-area (iPhone home indicator) so the build
+  // patch can subtract it from the engine's height.
+  {
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px);width:1px;visibility:hidden;pointer-events:none;";
+    document.body.appendChild(probe);
+    const measureSafeBottom = () => {
+      window.GDQ_SAFE_BOTTOM = probe.getBoundingClientRect().height || 0;
+    };
+    measureSafeBottom();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", () => {
+        measureSafeBottom();
+        window.dispatchEvent(new Event("resize"));
+      });
+    }
+
+    setInterval(() => {
+      measureSafeBottom();
+      const vv = window.visualViewport;
+      if (!vv) {
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      const targetH = vv.height - (window.GDQ_SAFE_BOTTOM || 0);
+      if (
+        Math.abs(rect.width - vv.width) > 2 ||
+        Math.abs(rect.height - targetH) > 2
+      ) {
+        window.dispatchEvent(new Event("resize"));
+      }
+    }, 500);
   }
 
   const noOp = () => { };
@@ -321,8 +353,30 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v7";
+    badge.textContent = "mobile v8";
     document.body.appendChild(badge);
+
+    // Live diagnostic readout, enabled with ?diag in the URL: shows what the
+    // phone reports vs what the engine drew. For remote debugging via
+    // screenshots.
+    if (new URLSearchParams(window.location.search).has("diag")) {
+      const diag = document.createElement("div");
+      diag.style.cssText =
+        "position:fixed;top:0;left:0;z-index:99999;background:rgba(0,0,0,0.75);" +
+        "color:#3dff6e;font:11px monospace;padding:4px 6px;pointer-events:none;" +
+        "white-space:pre;text-align:left;";
+      document.body.appendChild(diag);
+      setInterval(() => {
+        const vv = window.visualViewport;
+        const rect = canvas.getBoundingClientRect();
+        diag.textContent =
+          `vv: ${vv ? Math.round(vv.width) + "x" + Math.round(vv.height) + " scale " + vv.scale.toFixed(2) + " top " + Math.round(vv.offsetTop) : "none"}\n` +
+          `inner: ${window.innerWidth}x${window.innerHeight} dpr ${window.devicePixelRatio}\n` +
+          `buffer: ${canvas.width}x${canvas.height}\n` +
+          `canvas css: ${Math.round(rect.width)}x${Math.round(rect.height)} at y ${Math.round(rect.top)}\n` +
+          `safeBottom: ${window.GDQ_SAFE_BOTTOM || 0} standalone: ${window.navigator.standalone === true}`;
+      }, 500);
+    }
 
     // Testing backdoor: ?uiscale=1 activates the app's mobile layout on any
     // device (auto-computed scale); ?uiscale=1.6 forces that exact scale.

@@ -12,7 +12,7 @@ cd "$(dirname "$0")/../build/web"
 
 sed -i '' \
   -e 's/window\.innerWidth/(window.visualViewport?window.visualViewport.width:window.innerWidth)/g' \
-  -e 's/window\.innerHeight/(window.visualViewport?window.visualViewport.height:window.innerHeight)/g' \
+  -e 's/window\.innerHeight/((window.visualViewport?window.visualViewport.height:window.innerHeight)-(window.GDQ_SAFE_BOTTOM||0))/g' \
   index.js
 
 echo "Patched index.js: $(grep -c 'visualViewport?window.visualViewport.width' index.js) width site(s), $(grep -c 'visualViewport?window.visualViewport.height' index.js) height site(s)"
