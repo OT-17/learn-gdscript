@@ -10,6 +10,30 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     document.getElementById("canvas-frame")
   );
 
+  // The engine (canvasResizePolicy 2) sizes its buffer from
+  // window.innerWidth/innerHeight, but on mobile the on-screen keyboard only
+  // shrinks the visualViewport, not innerHeight. Redefine the getters so the
+  // engine sees the truly visible area, and forward visualViewport resizes as
+  // window resize events so it reacts immediately.
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    try {
+      Object.defineProperty(window, "innerWidth", {
+        get: () => Math.round(vv.width),
+        configurable: true,
+      });
+      Object.defineProperty(window, "innerHeight", {
+        get: () => Math.round(vv.height),
+        configurable: true,
+      });
+      vv.addEventListener("resize", () =>
+        window.dispatchEvent(new Event("resize"))
+      );
+    } catch (e) {
+      console.warn("visualViewport shim failed", e);
+    }
+  }
+
   const noOp = () => { };
 
   const throttle = (callback, limit = 50) => {
@@ -278,7 +302,10 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
      */
     const load = () => {
       setStatusMode(StatusMode.INDETERMINATE);
-      GODOT_CONFIG.canvasResizePolicy = 0;
+      // 2 = adaptive: the engine resizes its drawing buffer to the browser
+      // window continuously. Required for phones: with the old value (0) the
+      // buffer stayed at the hardcoded 1920x1080 desktop size forever.
+      GODOT_CONFIG.canvasResizePolicy = 2;
       GODOT_CONFIG.onPrintError = onPrintError;
       const engine = new Engine(GODOT_CONFIG);
       engine
@@ -308,7 +335,7 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v5";
+    badge.textContent = "mobile v6";
     document.body.appendChild(badge);
 
     // Testing backdoor: ?uiscale=1 activates the app's mobile layout on any
