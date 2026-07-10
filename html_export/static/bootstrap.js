@@ -10,28 +10,14 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     document.getElementById("canvas-frame")
   );
 
-  // The engine (canvasResizePolicy 2) sizes its buffer from
-  // window.innerWidth/innerHeight, but on mobile the on-screen keyboard only
-  // shrinks the visualViewport, not innerHeight. Redefine the getters so the
-  // engine sees the truly visible area, and forward visualViewport resizes as
-  // window resize events so it reacts immediately.
+  // The engine (canvasResizePolicy 2) is patched at build time to measure the
+  // visualViewport (see html_export/patch_web_export.sh), so it tracks the
+  // area the on-screen keyboard and browser bars leave visible. Forward
+  // visualViewport resizes as window resize events for immediate reaction.
   if (window.visualViewport) {
-    const vv = window.visualViewport;
-    try {
-      Object.defineProperty(window, "innerWidth", {
-        get: () => Math.round(vv.width),
-        configurable: true,
-      });
-      Object.defineProperty(window, "innerHeight", {
-        get: () => Math.round(vv.height),
-        configurable: true,
-      });
-      vv.addEventListener("resize", () =>
-        window.dispatchEvent(new Event("resize"))
-      );
-    } catch (e) {
-      console.warn("visualViewport shim failed", e);
-    }
+    window.visualViewport.addEventListener("resize", () =>
+      window.dispatchEvent(new Event("resize"))
+    );
   }
 
   const noOp = () => { };
@@ -335,7 +321,7 @@ window.GDQUEST = ((/** @type {GDQuestLib} */ GDQUEST) => {
     // Visible build tag so remote testers can confirm which version they run.
     const badge = document.createElement("div");
     badge.id = "version";
-    badge.textContent = "mobile v6";
+    badge.textContent = "mobile v7";
     document.body.appendChild(badge);
 
     // Testing backdoor: ?uiscale=1 activates the app's mobile layout on any
