@@ -1,0 +1,16 @@
+{
+  "name": "Learn GDScript From Zero",
+  "short_name": "GDScript",
+  "description": "Learn Godot's GDScript programming language from zero, by GDQuest.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#090a20",
+  "theme_color": "#090a20",
+  "icons": [
+    {
+      "src": "index.icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
